@@ -1,0 +1,15 @@
+# Core project dependencies
+opencv-python
+numpy
+imutils
+
+# Big Data stack dependencies
+kafka-python
+pyspark>=3.5.0,<4.0.0
+pymongo
+
+# License plate OCR
+easyocr
+
+# Web dashboard
+flask

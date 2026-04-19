@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Violation Ticket — {{ v._id[-8:] }}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Inter',sans-serif; background:#f4f6f9; display:flex;
+           justify-content:center; align-items:flex-start; min-height:100vh; padding:2rem; }
+    .ticket { background:#fff; width:100%; max-width:620px; border-radius:16px;
+              box-shadow:0 4px 24px rgba(0,0,0,.12); overflow:hidden; }
+
+    /* HEADER */
+    .ticket-header { background:linear-gradient(135deg,#c0392b,#e74c3c);
+                     padding:1.5rem 2rem; color:#fff; }
+    .ticket-header h1 { font-size:1.3rem; font-weight:700; letter-spacing:.02em; }
+    .ticket-header p { font-size:.8rem; opacity:.85; margin-top:.25rem; }
+    .ticket-id { font-size:.75rem; opacity:.7; margin-top:.5rem; font-family:monospace; }
+
+    /* BODY */
+    .ticket-body { padding:1.5rem 2rem; }
+    .section { margin-bottom:1.25rem; }
+    .section-label { font-size:.7rem; text-transform:uppercase; letter-spacing:.1em;
+                     color:#e74c3c; font-weight:600; margin-bottom:.6rem; }
+    .field-grid { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
+    .field { background:#f8f9fa; border-radius:8px; padding:.7rem .9rem; }
+    .field-name { font-size:.7rem; color:#888; margin-bottom:.2rem; }
+    .field-value { font-size:.9rem; font-weight:600; color:#1a1a2e; }
+    .violation-type-box { grid-column:1/-1; background:#fff0ef; border:1px solid #fcc; border-radius:8px;
+                           padding:.7rem .9rem; display:flex; align-items:center; gap:.5rem; }
+    .vt-label { font-size:.7rem; color:#c0392b; margin-bottom:.2rem; }
+    .vt-value { font-size:1rem; font-weight:700; color:#c0392b; }
+
+    /* SNAPSHOT */
+    .snapshot-section { text-align:center; margin-bottom:1.25rem; }
+    .snapshot-img { max-width:100%; max-height:200px; border-radius:10px;
+                    border:2px solid #e0e0e0; object-fit:contain; }
+    .no-snapshot { background:#f8f9fa; border-radius:10px; padding:2rem;
+                   color:#aaa; font-size:.85rem; border:2px dashed #e0e0e0; }
+
+    /* FINE BOX */
+    .fine-box { background:linear-gradient(135deg,#fff0f0,#ffe8e8);
+                border:1px solid #ffcdd2; border-radius:10px; padding:1rem 1.25rem;
+                display:flex; justify-content:space-between; align-items:center;
+                margin-bottom:1.25rem; }
+    .fine-label { font-size:.75rem; color:#c0392b; text-transform:uppercase; letter-spacing:.08em; }
+    .fine-value { font-size:1.6rem; font-weight:700; color:#c0392b; }
+
+    /* FOOTER */
+    .ticket-footer { background:#f8f9fa; border-top:1px solid #eee;
+                     padding:1rem 2rem; display:flex; align-items:center; justify-content:space-between; }
+    .footer-note { font-size:.72rem; color:#999; }
+    .print-btn { background:#c0392b; color:#fff; border:none; padding:.5rem 1.2rem;
+                 border-radius:6px; cursor:pointer; font-size:.8rem; font-weight:600; font-family:inherit; }
+    .print-btn:hover { background:#a93226; }
+    @media print { .print-btn { display:none; } body { background:white; padding:0; }
+                   .ticket { box-shadow:none; border-radius:0; max-width:100%; } }
+  </style>
+</head>
+<body>
+<div class="ticket">
+
+  <div class="ticket-header">
+    <h1>🚦 Traffic Violation Notice</h1>
+    <p>This is an automatically generated violation record from the Traffic Monitoring System.</p>
+    <div class="ticket-id">Ticket ID: {{ v._id }}</div>
+  </div>
+
+  <div class="ticket-body">
+
+    <!-- VIOLATION TYPE -->
+    <div class="section">
+      <div class="section-label">Violation Details</div>
+      <div class="field-grid">
+        <div class="violation-type-box">
+          <div>
+            <div class="vt-label">Violation Type</div>
+            <div class="vt-value">⚠️ {{ v.violation_type }}</div>
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-name">Camera ID</div>
+          <div class="field-value">{{ v.camera_id }}</div>
+        </div>
+        <div class="field" {% if v.get('license_plate') %}style="background:#e8f5e9;border:1px solid #a5d6a7;"{% endif %}>
+          <div class="field-name" {% if v.get('license_plate') %}style="color:#2e7d32;"{% endif %}>License Plate</div>
+          <div class="field-value" {% if v.get('license_plate') %}style="font-family:'Courier New',monospace;letter-spacing:.1em;color:#1b5e20;font-size:1rem;"{% endif %}>
+            {% if v.get('license_plate') %}
+              {{ v.license_plate }}
+            {% else %}
+              <span style="color:#999;font-size:.8rem;">Could not be detected</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-name">Detected At</div>
+          <div class="field-value">{{ v.detected_at }}</div>
+        </div>
+        <div class="field">
+          <div class="field-name">Stream Timestamp</div>
+          <div class="field-value">{{ "%.3f"|format(v.timestamp) }}</div>
+        </div>
+        <div class="field">
+          <div class="field-name">Snapshot Size</div>
+          <div class="field-value">{{ "%.1f"|format(v.snapshot_size / 1024) }} KB</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VEHICLE SNAPSHOT -->
+    <div class="section">
+      <div class="section-label">Vehicle Snapshot</div>
+      <div class="snapshot-section">
+        {% if v.get('car_snapshot_base64') %}
+          <img class="snapshot-img"
+               src="data:image/jpeg;base64,{{ v.car_snapshot_base64 }}"
+               alt="Vehicle snapshot"/>
+        {% else %}
+          <div class="no-snapshot">📷 No vehicle snapshot available</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- FINE -->
+    <div class="fine-box">
+      <div>
+        <div class="fine-label">Penalty Amount</div>
+        <div style="font-size:.75rem;color:#888;margin-top:.2rem;">
+          {% if v.violation_type == 'Red Light Crossing' %}
+            Mandatory stop violation
+          {% else %}
+            Wrong-way driving violation
+          {% endif %}
+        </div>
+      </div>
+      <div class="fine-value">
+        {% if v.violation_type == 'Red Light Crossing' %}
+          ₹1,000
+        {% else %}
+          ₹2,000
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- SYSTEM INFO -->
+    <div class="section">
+      <div class="section-label">System Information</div>
+      <div class="field-grid">
+        <div class="field">
+          <div class="field-name">Processing System</div>
+          <div class="field-value">Apache Spark 3.5.8</div>
+        </div>
+        <div class="field">
+          <div class="field-name">Message Broker</div>
+          <div class="field-value">Apache Kafka</div>
+        </div>
+        <div class="field">
+          <div class="field-name">Detection Algorithm</div>
+          <div class="field-value">MOG2 + Contour CV</div>
+        </div>
+        <div class="field">
+          <div class="field-name">Storage</div>
+          <div class="field-value">MongoDB (traffic_db)</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="ticket-footer">
+    <span class="footer-note">Generated by Traffic Monitoring System • Big Data Project</span>
+    <button class="print-btn" onclick="window.print()">🖨 Print Ticket</button>
+  </div>
+
+</div>
+</body>
+</html>

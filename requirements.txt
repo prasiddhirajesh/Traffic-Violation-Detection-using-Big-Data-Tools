@@ -1,0 +1,4 @@
+imutils
+PyQt5
+QDarkStyle
+opencv-python

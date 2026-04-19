@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Traffic Violation Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0d1117; --surface: #161b22; --surface2: #21262d;
+      --border: #30363d; --text: #e6edf3; --muted: #8b949e;
+      --red: #f85149; --orange: #d29922; --green: #3fb950;
+      --blue: #58a6ff; --purple: #bc8cff; --accent: #f85149;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+    /* TOP NAV */
+    nav { background:var(--surface); border-bottom:1px solid var(--border);
+          padding:0 2rem; display:flex; align-items:center; justify-content:space-between; height:60px; position:sticky; top:0; z-index:100; }
+    .nav-brand { display:flex; align-items:center; gap:.75rem; font-size:1.1rem; font-weight:600; }
+    .nav-brand .dot { width:10px; height:10px; border-radius:50%; background:var(--red);
+                      box-shadow:0 0 8px var(--red); animation:pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.4;} }
+    .nav-right { display:flex; align-items:center; gap:1rem; }
+    .badge { background:var(--surface2); border:1px solid var(--border); padding:.3rem .8rem;
+             border-radius:20px; font-size:.8rem; color:var(--muted); }
+    .badge span { color:var(--red); font-weight:600; margin-left:.3rem; }
+
+    /* STATS */
+    .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; padding:1.5rem 2rem; }
+    .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:12px;
+                 padding:1.25rem 1.5rem; display:flex; flex-direction:column; gap:.4rem; transition:border-color .2s; }
+    .stat-card:hover { border-color:var(--blue); }
+    .stat-label { font-size:.75rem; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); }
+    .stat-value { font-size:2rem; font-weight:700; line-height:1; }
+    .stat-sub { font-size:.75rem; color:var(--muted); }
+    .val-red { color:var(--red); } .val-orange { color:var(--orange); }
+    .val-green { color:var(--green); } .val-blue { color:var(--blue); }
+
+    /* MAIN CONTENT */
+    .main { padding:0 2rem 2rem; }
+    .section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; }
+    .section-title { font-size:1rem; font-weight:600; display:flex; align-items:center; gap:.5rem; }
+    .section-title::before { content:''; display:block; width:3px; height:18px; background:var(--red); border-radius:2px; }
+    .refresh-btn { background:var(--surface2); border:1px solid var(--border); color:var(--text);
+                   padding:.4rem .9rem; border-radius:6px; cursor:pointer; font-size:.8rem; font-family:inherit; transition:all .2s; }
+    .refresh-btn:hover { border-color:var(--blue); color:var(--blue); }
+
+    /* VIOLATION CARDS */
+    #cards-container { display:grid; grid-template-columns:repeat(auto-fill,minmax(380px,1fr)); gap:1rem; }
+    .vcard { background:var(--surface); border:1px solid var(--border); border-radius:12px;
+             overflow:hidden; transition:all .25s; animation:slideIn .3s ease; }
+    @keyframes slideIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+    .vcard:hover { border-color:var(--red); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.4); }
+    .vcard-header { display:flex; align-items:center; justify-content:space-between;
+                    padding:.85rem 1rem; border-bottom:1px solid var(--border); background:var(--surface2); }
+    .cam-badge { font-size:.75rem; font-weight:600; padding:.25rem .6rem; border-radius:6px;
+                 background:rgba(88,166,255,.15); color:var(--blue); border:1px solid rgba(88,166,255,.3); }
+    .vtype { font-size:.75rem; font-weight:600; padding:.25rem .6rem; border-radius:6px; }
+    .vtype.red-light { background:rgba(248,81,73,.15); color:var(--red); border:1px solid rgba(248,81,73,.3); }
+    .vtype.wrong-dir { background:rgba(188,140,255,.15); color:var(--purple); border:1px solid rgba(188,140,255,.3); }
+    .vcard-body { display:flex; gap:1rem; padding:1rem; }
+    .snapshot-box { width:110px; min-width:110px; height:80px; border-radius:8px; overflow:hidden;
+                    background:var(--surface2); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; }
+    .snapshot-box img { width:100%; height:100%; object-fit:cover; }
+    .snapshot-box .no-img { font-size:.7rem; color:var(--muted); text-align:center; padding:.5rem; }
+    .vcard-info { flex:1; display:flex; flex-direction:column; gap:.4rem; }
+    .info-row { display:flex; justify-content:space-between; align-items:center; }
+    .info-label { font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+    .info-val { font-size:.82rem; font-weight:500; color:var(--text); }
+    .time-val { color:var(--orange); font-size:.78rem; }
+    .vcard-footer { padding:.7rem 1rem; border-top:1px solid var(--border); display:flex; justify-content:flex-end; }
+    .ticket-btn { background:linear-gradient(135deg,#f85149,#d45d38); color:#fff; border:none;
+                  padding:.45rem 1rem; border-radius:6px; cursor:pointer; font-size:.78rem; font-weight:600;
+                  font-family:inherit; display:flex; align-items:center; gap:.4rem; transition:opacity .2s; }
+    .ticket-btn:hover { opacity:.85; }
+
+    /* LICENSE PLATE BADGE */
+    .plate-badge { background:rgba(63,185,80,.12); color:var(--green); border:1px solid rgba(63,185,80,.3);
+                   padding:.15rem .5rem; border-radius:4px; font-family:'Courier New',monospace;
+                   font-size:.82rem; font-weight:700; letter-spacing:.08em; }
+    .plate-badge.none { background:var(--surface2); color:var(--muted); border-color:var(--border);
+                        font-family:'Inter',sans-serif; font-weight:400; font-size:.72rem; letter-spacing:0; }
+
+    /* EMPTY STATE */
+    .empty-state { text-align:center; padding:4rem 2rem; color:var(--muted); }
+    .empty-state .icon { font-size:3rem; margin-bottom:1rem; }
+    .empty-state p { font-size:.9rem; margin-top:.5rem; }
+
+    /* CONNECTION STATUS */
+    #conn-status { position:fixed; bottom:1.5rem; right:1.5rem; padding:.5rem 1rem; border-radius:8px;
+                   font-size:.8rem; font-weight:500; border:1px solid; transition:all .3s; }
+    #conn-status.ok { background:rgba(63,185,80,.1); color:var(--green); border-color:rgba(63,185,80,.3); }
+    #conn-status.err { background:rgba(248,81,73,.1); color:var(--red); border-color:rgba(248,81,73,.3); }
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-track { background:var(--bg); }
+    ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <div class="dot"></div>
+    Traffic Violation Monitor
+  </div>
+  <div class="nav-right">
+    <div class="badge">Live Stream &nbsp;<span id="nav-total">0</span> violations</div>
+    <div class="badge">Auto-refresh <span>5s</span></div>
+  </div>
+</nav>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-label">Total Violations</div>
+    <div class="stat-value val-red" id="s-total">—</div>
+    <div class="stat-sub">All cameras combined</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Red Light Crossing</div>
+    <div class="stat-value val-orange" id="s-red">—</div>
+    <div class="stat-sub">cam_01 / cam_02 / cam_03</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Wrong Direction</div>
+    <div class="stat-value val-purple" id="s-dir" style="color:var(--purple)">—</div>
+    <div class="stat-sub">cam_04</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Active Cameras</div>
+    <div class="stat-value val-green" id="s-cams">—</div>
+    <div class="stat-sub">Producing to Kafka</div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="section-header">
+    <div class="section-title">Recent Violations</div>
+    <button class="refresh-btn" onclick="loadAll()">↻ Refresh Now</button>
+  </div>
+  <div id="cards-container">
+    <div class="empty-state">
+      <div class="icon">📡</div>
+      <strong>Connecting to MongoDB…</strong>
+      <p>Start the Spark stream processor and video producer to see violations here.</p>
+    </div>
+  </div>
+</div>
+
+<div id="conn-status" class="ok">● Connected</div>
+
+<script>
+const API = '';
+
+function fmtTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso.replace('T',' ') + ' UTC');
+  return d.toLocaleString();
+}
+
+function typeClass(t) {
+  return t === 'Red Light Crossing' ? 'red-light' : 'wrong-dir';
+}
+
+function renderCard(v) {
+  const hasImg = v.snapshot_size && v.snapshot_size > 0;
+  const imgHtml = hasImg
+    ? `<img src="/api/violation/${v._id}/image" alt="snapshot" loading="lazy"/>`
+    : `<div class="no-img">No snapshot</div>`;
+  return `
+  <div class="vcard" id="vc-${v._id}">
+    <div class="vcard-header">
+      <span class="cam-badge">${v.camera_id || '—'}</span>
+      <span class="vtype ${typeClass(v.violation_type)}">${v.violation_type || '—'}</span>
+    </div>
+    <div class="vcard-body">
+      <div class="snapshot-box">${imgHtml}</div>
+      <div class="vcard-info">
+        <div class="info-row">
+          <span class="info-label">Detected At</span>
+          <span class="info-val time-val">${fmtTime(v.detected_at)}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Camera</span>
+          <span class="info-val">${v.camera_id}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">License Plate</span>
+          <span class="info-val">${v.license_plate
+            ? `<span class="plate-badge">${v.license_plate}</span>`
+            : `<span class="plate-badge none">Not detected</span>`}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Snapshot Size</span>
+          <span class="info-val">${v.snapshot_size ? (v.snapshot_size / 1024).toFixed(1) + ' KB' : '—'}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Record ID</span>
+          <span class="info-val" style="font-size:.68rem;color:var(--muted)">${v._id.slice(-8)}</span>
+        </div>
+      </div>
+    </div>
+    <div class="vcard-footer">
+      <button class="ticket-btn" onclick="openTicket('${v._id}')">🎫 Generate Ticket</button>
+    </div>
+  </div>`;
+}
+
+async function loadStats() {
+  try {
+    const r = await fetch('/api/stats');
+    const s = await r.json();
+    document.getElementById('s-total').textContent = s.total;
+    document.getElementById('s-red').textContent = s.red_light;
+    document.getElementById('s-dir').textContent = s.wrong_direction;
+    document.getElementById('s-cams').textContent = s.cameras_active;
+    document.getElementById('nav-total').textContent = s.total;
+    setConn(true);
+  } catch { setConn(false); }
+}
+
+async function loadAll() {
+  try {
+    const r = await fetch('/api/violations?limit=50');
+    const data = await r.json();
+    const c = document.getElementById('cards-container');
+    if (!data.length) {
+      c.innerHTML = `<div class="empty-state">
+        <div class="icon">🟡</div>
+        <strong>No violations yet</strong>
+        <p>Run the producer with <code>--light red</code> to trigger detection.</p>
+      </div>`;
+    } else {
+      c.innerHTML = data.map(renderCard).join('');
+    }
+    setConn(true);
+  } catch(e) { setConn(false); }
+}
+
+function setConn(ok) {
+  const el = document.getElementById('conn-status');
+  el.className = ok ? 'ok' : 'err';
+  el.textContent = ok ? '● Connected to MongoDB' : '✕ MongoDB unreachable';
+}
+
+function openTicket(id) {
+  window.open('/ticket/' + id, '_blank', 'width=700,height=600');
+}
+
+// Auto-refresh every 5 seconds
+loadStats(); loadAll();
+setInterval(() => { loadStats(); loadAll(); }, 5000);
+</script>
+</body>
+</html>

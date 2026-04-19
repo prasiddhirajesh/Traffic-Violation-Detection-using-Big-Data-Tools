@@ -1,0 +1,31 @@
+__pycache__/
+car_images/
+license_images/
+tickets/
+reported_car/
+.idea/
+venv/
+spark_checkpoints/
+pyspark_trace.txt
+videos/
+
+# --- Newly added standard ignores ---
+# Log files (very important for Kafka/Spark)
+*.log
+*.err
+
+# Environment variables
+.env
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Any random test files or traces
+test_*.pyc
+allfiles.txt
+
+# Machine Learning weights (prevent pushing huge model files)
+.EasyOCR/
+*.pt
+*.pth
